@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -165,8 +166,8 @@ func (q *kafkaQueue) Start() {
 }
 
 func (q *kafkaQueue) Stop() {
-	q.consumer.Close()
-	logx.Close()
+	_ = q.consumer.Close()
+	_ = logx.Close()
 }
 
 func (q *kafkaQueue) consumeOne(key, val string) error {
@@ -191,7 +192,6 @@ func (q *kafkaQueue) startConsumers() {
 						continue
 					}
 				}
-
 				if err := q.consumer.CommitMessages(context.Background(), msg); err != nil {
 					logx.Errorf("commit failed, error: %v", err)
 				}
@@ -200,22 +200,33 @@ func (q *kafkaQueue) startConsumers() {
 	}
 }
 
+var messages []interface{}
+
 func (q *kafkaQueue) startProducers() {
 	for i := 0; i < q.c.Consumers; i++ {
 		q.producerRoutines.Run(func() {
+			ticker := time.NewTicker(10 * time.Millisecond)
+			defer ticker.Stop()
 			for {
-				msg, err := q.consumer.FetchMessage(context.Background())
-				// io.EOF means consumer closed
-				// io.ErrClosedPipe means committing messages on the consumer,
-				// kafka will refire the messages on uncommitted messages, ignore
-				if err == io.EOF || err == io.ErrClosedPipe {
-					return
+				select {
+				case <-ticker.C:
+					msg, err := q.consumer.FetchMessage(context.Background())
+					// io.EOF means consumer closed
+					// io.ErrClosedPipe means committing messages on the consumer,
+					// kafka will refire the messages on uncommitted messages, ignore
+					if err == io.EOF || err == io.ErrClosedPipe {
+						return
+					}
+					if err != nil {
+						logx.Errorf("Error on reading message, %q", err.Error())
+						continue
+					}
+					fmt.Println("msg value:", string(msg.Value), "value length:", len(msg.Value))
+					select {
+					case q.channel <- msg:
+						fmt.Println("kafka channel message send successfully.")
+					}
 				}
-				if err != nil {
-					logx.Errorf("Error on reading message, %q", err.Error())
-					continue
-				}
-				q.channel <- msg
 			}
 		})
 	}
