@@ -200,8 +200,6 @@ func (q *kafkaQueue) startConsumers() {
 	}
 }
 
-var messages []interface{}
-
 func (q *kafkaQueue) startProducers() {
 	for i := 0; i < q.c.Consumers; i++ {
 		q.producerRoutines.Run(func() {
