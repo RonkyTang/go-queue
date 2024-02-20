@@ -98,6 +98,17 @@ func (p *Pusher) Push(v string) error {
 		return p.producer.WriteMessages(context.Background(), msg)
 	}
 }
+func (p *Pusher) PushWithKV(k string, v string) error {
+	msg := kafka.Message{
+		Key:   []byte(k),
+		Value: []byte(v),
+	}
+	if p.executor != nil {
+		return p.executor.Add(msg, len(v))
+	} else {
+		return p.producer.WriteMessages(context.Background(), msg)
+	}
+}
 
 // WithChunkSize customizes the Pusher with the given chunk size.
 func WithChunkSize(chunkSize int) PushOption {
