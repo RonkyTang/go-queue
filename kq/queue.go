@@ -157,12 +157,12 @@ func newKafkaQueue(c KqConf, handler ConsumeHandler, options queueOptions) queue
 }
 
 func (q *kafkaQueue) Start() {
-	q.startConsumers()
+	//q.startConsumers()
 	//q.startProducers()
 
 	//q.producerRoutines.Wait()
 	//close(q.channel)
-	q.consumerRoutines.Wait()
+	//q.consumerRoutines.Wait()
 }
 
 func (q *kafkaQueue) Stop() {
