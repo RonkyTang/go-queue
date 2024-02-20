@@ -158,10 +158,10 @@ func newKafkaQueue(c KqConf, handler ConsumeHandler, options queueOptions) queue
 
 func (q *kafkaQueue) Start() {
 	q.startConsumers()
-	q.startProducers()
+	//q.startProducers()
 
-	q.producerRoutines.Wait()
-	close(q.channel)
+	//q.producerRoutines.Wait()
+	//close(q.channel)
 	q.consumerRoutines.Wait()
 }
 
@@ -205,6 +205,7 @@ func (q *kafkaQueue) startProducers() {
 		q.producerRoutines.Run(func() {
 			ctx := context.Background()
 			for {
+
 				msg, err := q.consumer.FetchMessage(ctx)
 				// io.EOF means consumer closed
 				// io.ErrClosedPipe means committing messages on the consumer,
